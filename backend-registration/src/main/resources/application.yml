@@ -5,10 +5,10 @@ server:
     include-binding-errors: always
 
 spring:
-  #datasource:
-  #password:
-  #url: jdbc:postgresql://localhost:5432/registration
-  #username:
+#  datasource:
+#  password:
+#  url: jdbc:postgresql://localhost:5432/registration
+#  username:
   jpa:
     hibernate:
       ddl-auto: create-drop
