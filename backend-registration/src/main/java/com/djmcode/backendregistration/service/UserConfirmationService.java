@@ -13,4 +13,8 @@ public interface UserConfirmationService
   Optional<UserConfirmationEntity> getUserToken(String token);
 
   int setConfirmedAt(String token);
+
+  int setExpiresAt(String token);
+
+  Optional<UserConfirmationEntity> getUserConfirmationById(Long id);
 }

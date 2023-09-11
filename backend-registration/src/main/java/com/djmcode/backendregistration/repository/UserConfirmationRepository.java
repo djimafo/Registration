@@ -20,4 +20,11 @@ public interface UserConfirmationRepository extends JpaRepository<UserConfirmati
           "SET c.confirmedAt = ?2 " +
           "WHERE c.token = ?1")
   int updateConfirmedAt(String token,LocalDateTime confirmedAt);
+
+  @Transactional
+  @Modifying
+  @Query("UPDATE UserConfirmationEntity c " +
+          "SET c.expiresAt = ?2 " +
+          "WHERE c.token = ?1")
+  int updateExpiresAt(String token,LocalDateTime expiresAt);
 }

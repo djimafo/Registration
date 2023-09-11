@@ -1,6 +1,7 @@
 package com.djmcode.backendregistration.service;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.UUID;
 
 import com.djmcode.backendregistration.email.EmailSender;
@@ -9,7 +10,9 @@ import com.djmcode.backendregistration.entity.Role;
 import com.djmcode.backendregistration.entity.UserConfirmationEntity;
 import com.djmcode.backendregistration.entity.UserEntity;
 import com.djmcode.backendregistration.model.RegistrationRequest;
+import com.djmcode.backendregistration.repository.UserConfirmationRepository;
 import com.djmcode.backendregistration.repository.UserRepository;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -18,12 +21,13 @@ import org.springframework.stereotype.Service;
 public class RegistrationService
 {
   private final UserConfirmationService userConfirmationService;
+  private final UserConfirmationRepository userConfirmationRepository;
   private final UserService userService;
   private final EmailValidator emailValidator;
   private final EmailSender emailSender;
   private final UserRepository userRepository;
 
-  public String register(RegistrationRequest userReq)
+  public String register(@NonNull RegistrationRequest userReq)
   {
     boolean isValidEmail = emailValidator.
             verification(userReq.getEmail());
@@ -39,16 +43,22 @@ public class RegistrationService
                                 .password(userReq.getPassword())
                                 .role(Role.USER)
                                 .build();
-    boolean userExists = userRepository
-            .findByEmail(userReq.getEmail())
-            .isPresent();
+    Optional<UserEntity> userdb = userRepository
+            .findByEmail(userReq.getEmail());
 
-    if (userExists)
+    if (userdb.isPresent())
     {
-      // TODO check of attributes are the same and
-      // TODO if email not confirmed send confirmation email.
+      Optional<UserConfirmationEntity> userConfirmation = userConfirmationService.getUserConfirmationById(userdb.get().getId());
 
-      throw new IllegalStateException("email already taken");
+      if (userdb.get().getEnabled()==null && userConfirmation.isPresent())
+      {
+        // TODO check of attributes are the same
+          String token = userConfirmation.get().getToken();
+          sendEmail(userReq, token);
+          userConfirmationService.setExpiresAt(token);
+          return "Please check your Email and Please click on the link to activate your account";
+      }
+      return "User is already registered";
     }
 
     userRepository.save(user);
@@ -62,17 +72,20 @@ public class RegistrationService
                                                                      .userEntity(user)
                                                                      .build();
     userConfirmationService.saveUserConfirmation(confirmationToken);
+    sendEmail(userReq, token);
+    return token;
+  }
 
+  public void sendEmail(@NonNull RegistrationRequest userReq, @NonNull String token)
+  {
     String link = "http://localhost:8080/api/v1/registration/confirmation?token=" + token;
     emailSender.sendEmailConfirmation(userReq.getEmail(),
                                       userReq.getFirstname(),
                                       "Confirm your email",
                                       link);
-
-    return token;
   }
 
-  public String confirmationToken(String token)
+  public String confirmationToken(@NonNull String token)
   {
     UserConfirmationEntity user = userConfirmationService
             .getUserToken(token)
@@ -86,7 +99,7 @@ public class RegistrationService
 
     if (expiredAt.isBefore(LocalDateTime.now()))
     {
-      throw new IllegalStateException("token expired");
+      return "token expired";
     }
     userConfirmationService.setConfirmedAt(token);
     userService.enableUser(user.getUserEntity().getEmail());
