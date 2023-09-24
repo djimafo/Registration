@@ -41,7 +41,7 @@ public class UserEntity implements UserDetails {
   private String email;
   @NotBlank
   @NonNull
-  @Size(max = 50,min = 8)
+  @Size(message = "Password must be at least 8 characters long ",max = 50,min = 8)
   private String password;
 
   @Enumerated(EnumType.STRING)
