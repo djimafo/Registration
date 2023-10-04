@@ -3,12 +3,15 @@ server:
   error:
     include-message: always
     include-binding-errors: always
-
+  port: 8081
 spring:
 #  datasource:
-#  password:
-#  url: jdbc:postgresql://localhost:5432/registration
-#  username:
+ #  url: jdbc:postgresql://localhost:5432/registration
+ #  username:
+ #  password:
+ #  driver-class-name: org.postgresql.Driver
+
+
   jpa:
     hibernate:
       ddl-auto: create-drop

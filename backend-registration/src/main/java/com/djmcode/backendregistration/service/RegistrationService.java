@@ -14,6 +14,7 @@ import com.djmcode.backendregistration.repository.UserConfirmationRepository;
 import com.djmcode.backendregistration.repository.UserRepository;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -26,8 +27,10 @@ public class RegistrationService
   private final EmailValidator emailValidator;
   private final EmailSender emailSender;
   private final UserRepository userRepository;
+  private final JwtService jwtService;
+  private final PasswordEncoder passwordEncoder;
 
-  public String register(@NonNull RegistrationRequest userReq)
+  public String register(@NonNull UserEntity userReq)
   {
     boolean isValidEmail = emailValidator.
             verification(userReq.getEmail());
@@ -36,13 +39,13 @@ public class RegistrationService
     {
       throw new IllegalStateException("email not valid");
     }
-    UserEntity user = UserEntity.builder()
-                                .firstname(userReq.getFirstname())
-                                .lastname(userReq.getLastname())
-                                .email(userReq.getEmail())
-                                .password(userReq.getPassword())
-                                .role(Role.USER)
-                                .build();
+//    UserEntity user = UserEntity.builder()
+//                                .firstname(userReq.getFirstname())
+//                                .lastname(userReq.getLastname())
+//                                .email(userReq.getEmail())
+//                                .password(passwordEncoder.encode( userReq.getPassword()))
+//                                .role(Role.USER)
+//                                .build();
     Optional<UserEntity> userdb = userRepository
             .findByEmail(userReq.getEmail());
 
@@ -61,24 +64,25 @@ public class RegistrationService
       return "User is already registered";
     }
 
-    userRepository.save(user);
+    userRepository.save(userReq);
 
-    String token = UUID.randomUUID().toString();
+    //String token = UUID.randomUUID().toString();
+    String token = jwtService.generateToken(userReq);
 
     UserConfirmationEntity confirmationToken = UserConfirmationEntity.builder()
                                                                      .token(token)
                                                                      .createdAt(LocalDateTime.now())
                                                                      .expiresAt(LocalDateTime.now().plusMinutes(15))
-                                                                     .userEntity(user)
+                                                                     .userEntity(userReq)
                                                                      .build();
     userConfirmationService.saveUserConfirmation(confirmationToken);
     sendEmail(userReq, token);
     return token;
   }
 
-  public void sendEmail(@NonNull RegistrationRequest userReq, @NonNull String token)
+  public void sendEmail(@NonNull UserEntity userReq, @NonNull String token)
   {
-    String link = "http://localhost:8080/api/v1/registration/confirmation?token=" + token;
+    String link = "http://localhost:8081/api/v1/auth/registration/confirmation?token=" + token;
     emailSender.sendEmailConfirmation(userReq.getEmail(),
                                       userReq.getFirstname(),
                                       "Confirm your email",

@@ -3,7 +3,6 @@ package com.djmcode.backendregistration.entity;
 import java.util.Collection;
 import java.util.List;
 
-
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -46,7 +45,9 @@ public class UserEntity implements UserDetails {
 
   @Enumerated(EnumType.STRING)
   private Role role;
+  @Builder.Default
   private Boolean locked = false;
+  @Builder.Default
   private Boolean enabled = false;
 
 
