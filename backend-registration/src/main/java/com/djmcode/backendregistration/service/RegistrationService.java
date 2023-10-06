@@ -2,33 +2,26 @@ package com.djmcode.backendregistration.service;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
-import java.util.UUID;
 
 import com.djmcode.backendregistration.email.EmailSender;
 import com.djmcode.backendregistration.email.EmailValidator;
-import com.djmcode.backendregistration.entity.Role;
 import com.djmcode.backendregistration.entity.UserConfirmationEntity;
 import com.djmcode.backendregistration.entity.UserEntity;
-import com.djmcode.backendregistration.model.RegistrationRequest;
-import com.djmcode.backendregistration.repository.UserConfirmationRepository;
 import com.djmcode.backendregistration.repository.UserRepository;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
 public class RegistrationService
 {
-  private final UserConfirmationService userConfirmationService;
-  private final UserConfirmationRepository userConfirmationRepository;
-  private final UserService userService;
-  private final EmailValidator emailValidator;
-  private final EmailSender emailSender;
-  private final UserRepository userRepository;
-  private final JwtService jwtService;
-  private final PasswordEncoder passwordEncoder;
+  private final @NonNull UserConfirmationService userConfirmationService;
+  private final @NonNull UserService userService;
+  private final @NonNull EmailValidator emailValidator;
+  private final @NonNull EmailSender emailSender;
+  private final @NonNull UserRepository userRepository;
+  private final @NonNull JwtService jwtService;
 
   public String register(@NonNull UserEntity userReq)
   {
@@ -39,13 +32,7 @@ public class RegistrationService
     {
       throw new IllegalStateException("email not valid");
     }
-//    UserEntity user = UserEntity.builder()
-//                                .firstname(userReq.getFirstname())
-//                                .lastname(userReq.getLastname())
-//                                .email(userReq.getEmail())
-//                                .password(passwordEncoder.encode( userReq.getPassword()))
-//                                .role(Role.USER)
-//                                .build();
+
     Optional<UserEntity> userdb = userRepository
             .findByEmail(userReq.getEmail());
 
@@ -53,7 +40,7 @@ public class RegistrationService
     {
       Optional<UserConfirmationEntity> userConfirmation = userConfirmationService.getUserConfirmationById(userdb.get().getId());
 
-      if (userdb.get().getEnabled()==null && userConfirmation.isPresent())
+      if (!userdb.get().getEnabled() && userConfirmation.isPresent())
       {
         // TODO check of attributes are the same
           String token = userConfirmation.get().getToken();
@@ -66,13 +53,13 @@ public class RegistrationService
 
     userRepository.save(userReq);
 
-    //String token = UUID.randomUUID().toString();
     String token = jwtService.generateToken(userReq);
 
+    final long EXPIRATION = 15;
     UserConfirmationEntity confirmationToken = UserConfirmationEntity.builder()
                                                                      .token(token)
                                                                      .createdAt(LocalDateTime.now())
-                                                                     .expiresAt(LocalDateTime.now().plusMinutes(15))
+                                                                     .expiresAt(LocalDateTime.now().plusMinutes(EXPIRATION))
                                                                      .userEntity(userReq)
                                                                      .build();
     userConfirmationService.saveUserConfirmation(confirmationToken);

@@ -36,11 +36,11 @@ public class UserEntity implements UserDetails {
   private String lastname;
   @NotBlank
   @NonNull
-  @Email(message = "Email is not valid", regexp = "^[a-zA-Z0-9_!#$%&'*+/=?`{|}~^.-]+@[a-zA-Z0-9.-]+$")
+  //@Email(message = "Email is not valid", regexp = "^[a-zA-Z0-9_!#$%&'*+/=?`{|}~^.-]+@[a-zA-Z0-9.-]+$")
   private String email;
   @NotBlank
   @NonNull
-  @Size(message = "Password must be at least 8 characters long ",max = 50,min = 8)
+  //@Size(message = "Password must be at least 8 characters long ",max = 50,min = 8)
   private String password;
 
   @Enumerated(EnumType.STRING)
